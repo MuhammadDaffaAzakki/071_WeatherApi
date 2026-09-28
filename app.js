@@ -26,4 +26,39 @@ app.get('/api/lokasi', async (req, res) => {
         const feature = data.features[0];
         const koordinat = feature.geometry.coordinates;
 
-        
+        let negara = "-";
+        let provinsi = "-";
+        let kecamatan = "-";
+
+        if (feature.context) {
+            feature.context.forEach(item => {
+                if (item.id.startsWith('country')) negara = item.text;
+                if (item.id.startsWith('region')) provinsi = item.text;
+                if (item.id.startsWith('place') || item.id.startsWith('locality') || item.id.startsWith('neighborhood')) {
+                    kecamatan = item.text;
+                }
+            });
+        }
+
+        if (provinsi === "-" && feature.text) {
+            provinsi = feature.text;
+        }
+
+        res.json({
+            lokasi: feature.place_name || feature.text,
+            negara: negara,
+            provinsi: provinsi,
+            kecamatan: kecamatan !== "-" ? kecamatan : (feature.text || "-"),
+            longitude: koordinat[0],
+            latitude: koordinat[1]
+        });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({
+            message: "Gagal mengambil data dari API MapTiler"
+        });
+    }
+});
+
+});
